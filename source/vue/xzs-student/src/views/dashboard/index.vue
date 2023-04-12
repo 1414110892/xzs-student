@@ -32,8 +32,8 @@
                   </el-tag>
                 </td>
                 <td width="80px">
-                  <router-link target="_blank" :to="{path:'/do',query:{id:paperItem.examPaperId}}" v-if="paperItem.status === null">
-                    <el-button  type="text" size="small">开始答题</el-button>
+                  <router-link target="_blank"  v-if="paperItem.status === null">
+                    <el-button  type="text" size="small" @click="enterFullScreen">开始答题</el-button>
                   </router-link>
                   <router-link target="_blank" :to="{path:'/edit',query:{id:paperItem.examPaperAnswerId}}" v-else-if="paperItem.status === 1">
                     <el-button  type="text" size="small">批改试卷</el-button>
@@ -98,6 +98,7 @@ import indexApi from '@/api/dashboard'
 export default {
   data () {
     return {
+      isFullScreen: false,
       fixedPaper: [],
       timeLimitPaper: [],
       pushPaper: [],
@@ -123,6 +124,22 @@ export default {
     })
   },
   methods: {
+    // 进入全屏模式:to="{path:'/do',query:{id:paperItem.examPaperId}}"
+    enterFullScreen () {
+      this.$router.push({
+        name: 'ExamPaperDo',
+        params: {
+          id: this.paperItem.examPaperId
+        }
+      })
+      const elem = document.documentElement
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen()
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen()
+      }
+      this.isFullScreen = true
+    },
     statusTagFormatter (status) {
       return this.enumFormat(this.statusTag, status)
     },

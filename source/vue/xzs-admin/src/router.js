@@ -237,6 +237,7 @@ const constantRoutes = [
       title: '日志中心',
       icon: 'log'
     },
+    // 有且仅有一个子菜单时会默认隐藏父菜单，alwaysShow: true的作用是显示父菜单
     alwaysShow: true,
     children: [
       {

@@ -9,17 +9,18 @@
            <el-table-column label="状态" prop="status" width="100px">
              <template slot-scope="{row}">
                <el-tag :type="statusTagFormatter(row.status)">
-                 {{ statusTextFormatter(row.status) }}
+                 {{ statusTextFormatter(row.status=2) }}
                </el-tag>
              </template>
            </el-table-column>
            <el-table-column prop="createTime" label="做题时间"  width="170" />
            <el-table-column  align="right" width="70">
              <template slot-scope="{row}">
-               <router-link target="_blank" :to="{path:'/edit',query:{id:row.id}}" v-if="row.status === 1 ">
-                 <el-button  type="text" size="small">批改</el-button>
-               </router-link>
-               <router-link target="_blank" :to="{path:'/read',query:{id:row.id}}" v-if="row.status === 2 ">
+<!--               <router-link target="_blank" :to="{path:'/edit',query:{id:row.id}}" v-if="row.status === 1 ">-->
+<!--                 <el-button  type="text" size="small">批改</el-button>-->
+<!--               </router-link>-->
+<!--               <router-link target="_blank" :to="{path:'/read',query:{id:row.id}}" v-if="row.status === 2 ">-->
+               <router-link target="_blank" :to="{path:'/read',query:{id:row.id}}">
                  <el-button  type="text" size="small">查看试卷</el-button>
                </router-link>
              </template>
