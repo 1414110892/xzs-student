@@ -1,9 +1,13 @@
 <template>
-  <div>
+  <div id="contentDiv">
 <!--    <el-button @Click="enterFullScreen()">全屏</el-button>-->
 <!--    <el-button @Click="exitFullScreen()">退出全屏</el-button>-->
-<!--    <h1 align="center">注意：考生不允许切屏，检测到切屏则会自动交卷，考生请勿操作，否则按零分处置！！</h1>-->
       <video ref="videoElement" class="video" autoplay></video>
+<!--    <video ref="localVideo" class="video" autoplay playsinline></video>-->
+<!--    <video ref="remoteVideo" class="video" autoplay playsinline></video>-->
+<!--    <el-button v-if="!isaccept" @click="accept">接受</el-button>-->
+    <video ref="v1" autoplay playsinline class="video1"></video>
+    <video ref="v2" autoplay playsinline class="video2"></video>
     <div class="tips">注意：考生不允许切屏，检测到切屏则会自动交卷，考生请勿操作，否则按零分处置！！</div>
     <div >
       <el-row  class="do-exam-title" >
@@ -45,7 +49,7 @@
                               v-for="questionItem in titleItem.questionItems"
                               class="exam-question-item" label-width="50px" :id="'question-'+ questionItem.itemOrder">
                   <QuestionEdit :qType="questionItem.questionType" :question="questionItem"
-                                :answer="answer.answerItems[questionItem.itemOrder-1]"/>
+                                :answer="answer.answerItems[questionItem.itemOrder-1]" :getisScreenOff2="getisScreenOff2"/>
                 </el-form-item>
               </el-card>
             </el-row>
@@ -60,7 +64,7 @@
 <!--    <div class="exam-screen-off" >-->
 <!--      <p>您已离开考试窗口，请勿切屏！</p>-->
 <!--    </div>-->
-    <el-dialog title="提示" :visible.sync="isScreenOff" width="480px" class="commonDialog multi clickLight" center :close-on-click-modal="false">
+    <el-dialog title="提示" :visible.sync="isScreenOff" width="480px" class="commonDialog multi clickLight" center :close-on-click-modal="false" @close="submitForm">
 <!--      <div class="dialogTipsbox" v-if="tips===1">你还有试题未作答，确认要交卷？</div>-->
       <div class="dialogTipsbox">
         您已经切屏，系统会自动提交试卷！！
@@ -73,29 +77,53 @@
   </div>
 </template>
 
-<script>
+<script type="module" lang="js">
 import { mapState, mapGetters } from 'vuex'
 import { formatSeconds } from '@/utils'
 import QuestionEdit from '../components/QuestionEdit'
 import examPaperApi from '@/api/examPaper'
 import examPaperAnswerApi from '@/api/examPaperAnswer'
-import io from 'socket.io-client'
+// eslint-disable-next-line no-unused-vars
+import { websocketStore } from '@/store/websokcet.js'
+import socket from '@/utils/websocket.js'
+import { ref } from 'vue'
 
+// const { createClient } = require('webrtc-client')
+// import { Client } from 'webrtc-client'
+// const { createClient } = require('webrtc-client')
+// const isaccept = ref(false)
+// const web = websocketStore()
+let uid = ref('')
+let tid = ref('')
+const v1 = ref()
+const v2 = ref()
+const pc = ref(null)
+const mystrea = ref()
 export default {
   components: { QuestionEdit },
   data () {
     return {
-      websocket: null,
+      altKeyPressed: null,
+      isaccept: false,
+      peer: null,
+      remoteStream: null,
       localStream: null,
       pc: new RTCPeerConnection(),
       isFullScreen: false,
       isScreenOff: false,
+      isScreenOff2: true,
       form: {},
       formLoading: false,
       answer: {
         questionId: null,
         doTime: 0,
         answerItems: []
+      },
+      richEditor: {
+        dialogVisible: false,
+        object: null,
+        parameterName: '',
+        instance: null
       },
       timer: null,
       remainTime: 0
@@ -127,6 +155,12 @@ export default {
           })
         })
         re.response.titleItems.sort(() => Math.random() - 0.5)
+        var i = 1
+        re.response.titleItems.forEach(titleItem => {
+          titleItem.questionItems.forEach(questionItem => {
+            questionItem.itemOrder = i++
+          })
+        })
         _this.form = re.response
         _this.remainTime = re.response.suggestTime * 60
         _this.initAnswer()
@@ -136,13 +170,86 @@ export default {
     }
   },
   mounted () {
+    // this.loginWebsocket()
+    // web.$subscribe((mutations, state) => {
+    //   let msg = JSON.parse(state.msg)
+    //   switch (msg.type) {
+    //     case 4:
+    //       this.sxt().then(res => {
+    //         socket.send({ uid: uid.value, to: tid.value, type: 5 })
+    //       })
+    //       break
+    //     case 5:
+    //       this.sxt().then(res => {
+    //         if (pc.value == null) {
+    //           this.createPeerConnection()
+    //         }
+    //
+    //         pc.value.createOffer(this.createOfferAndSendMessage, this.handleCreateOfferError)
+    //       })
+    //       break
+    //     case 6:
+    //       if (pc.value == null) {
+    //         this.createPeerConnection()
+    //       }
+    //       console.log(msg.message)
+    //       pc.value.setRemoteDescription(new RTCSessionDescription(msg.message))
+    //       this.doAnswer()
+    //       break
+    //     case 7:
+    //       pc.value.setRemoteDescription(new RTCSessionDescription(msg.message))
+    //       break
+    //     case 8:
+    //
+    //       console.log('aaa')
+    //       var candidate = new RTCIceCandidate({
+    //         sdpMLineIndex: msg.message.sdpMLineIndex,
+    //         candidate: msg.message.candidate
+    //       })
+    //       pc.value.addIceCandidate(candidate)
+    //
+    //       break
+    //   }
+    // })
+    // this.sxt()
     // 在组件挂载后执行的代码
     // this.initWebsocket()
     this.initWebRTC()
+    // document.addEventListener('keydown', this.stopShortCutKey)
+    // 下面两个处理alt+table键
+    // window.addEventListener('keydown', function (event) {
+    //   if (event.keyCode === 18) {
+    //     this.altKeyPressed = true
+    //   }
+    // })
+    //
+    // window.addEventListener('keyup', function (event) {
+    //   if (event.keyCode === 18) {
+    //     this.altKeyPressed = false
+    //   }
+    //   if (this.altKeyPressed && event.keyCode === 9) {
+    //     // 处理 Alt + Tab 快捷键逻辑
+    //     this.handleScreenOff()
+    //   }
+    // })
 
-    // eslint-disable-next-line no-undef
-    // this.enterFullScreen()
+    // this.stopShortCutKey()
+    // window.addEventListener('blur', function (event) {
+    //   // 排除 UEditor 编辑器
+    //   if (/* event.relatedTarget && */ event.relatedTarget.classList.contains('edui')) {
+    //     console.log('editor测试')
+    //     console.log(event)
+    //   } else {
+    //     // 处理窗口失去焦点的情况
+    //     console.log(event)
+    //     this.handleScreenOff()
+    //   }
+    // }.bind(this))
+
     window.addEventListener('blur', this.handleScreenOff)
+    // window.addEventListener('unload', this.handleScreenOff)
+    // document.getElementById('contentDiv').addEventListener('mouseleave', this.handleScreenOff)
+    // document.getElementById('contentDiv').addEventListener('mouseleave', this.handleScreenOff)
     // this.enterFullScreen()
   },
   beforeDestroy () {
@@ -150,27 +257,177 @@ export default {
     window.clearInterval(this.timer)
   },
   methods: {
-    // 组件中的方法
-    initWebsocket () {
-      // 初始化WebSocket连接
-      this.websocket = io('http://localhost:8000')
 
-      this.websocket.on('connect', () => {
-        console.log('WebSocket连接已打开')
-      })
+    getisScreenOff2 (isScreenOff2) {
+      this.isScreenOff2 = isScreenOff2
+    },
 
-      this.websocket.on('message', (data) => {
-        console.log('收到WebSocket消息：', data)
-      })
+    stopShortCutKey (event) {
+      // 屏蔽鼠标右键、Ctrl+n、shift+F10、F5刷新、退格键
+      if ((event.altKey) && ((event.keyCode === 37) || (event.keyCode === 39))) {
+        alert('不准你使用ALT+方向键前进或后退网页！')
+        event.preventDefault()
+      }
+      if ((event.keyCode === 116) || // 屏蔽 F5 刷新键
+        (event.keyCode === 112) || // 屏蔽 F1 刷新键
+        (event.ctrlKey && event.keyCode === 82)) { // Ctrl + R
+        event.preventDefault()
+      }
+      if ((event.ctrlKey) && (event.keyCode === 78)) {
+        console.log('测试测试测试')
+        this.handleScreenOff()
+        event.preventDefault() // 屏蔽 Ctrl+n
+      }
+      if ((event.ctrlKey) && (event.keyCode === 78)) {
+        console.log('测试测试测试')
+        event.preventDefault() // 屏蔽 Ctrl+n
+      }
+      if ((event.shiftKey) && (event.keyCode === 121)) { // 屏蔽 shift+F10
+        event.preventDefault()
+      }
+      if (event.target.tagName === 'A' && event.shiftKey) {
+        event.preventDefault() // 屏蔽 shift 加鼠标左键新开一网页
+      }
+      if ((event.altKey) && (event.keyCode === 27)) {
+        alert('认真答题！')
+      }
+    },
 
-      this.websocket.on('error', (error) => {
-        console.error('WebSocket连接错误：', error)
-      })
+    editorReady (instance) {
+      this.richEditor.instance = instance
+      let currentContent = this.richEditor.object[this.richEditor.parameterName]
+      this.richEditor.instance.setContent(currentContent)
+      // 光标定位到Ueditor
+      this.richEditor.instance.focus(true)
+    },
 
-      this.websocket.on('disconnect', () => {
-        console.warn('WebSocket连接已关闭')
+    handleCreateOfferError () {
+      console.log('aa')
+    },
+
+    createOfferAndSendMessage (sessionDescription) {
+      pc.value.setLocalDescription(sessionDescription)
+      socket.send({ uid: uid.value, to: tid.value, type: 6, message: sessionDescription })
+    },
+
+    doAnswer () {
+      if (pc.value == null) {
+        this.createPeerConnection()
+      }
+      pc.value.createAnswer().then(this.createAnswerAndSendMessage, this.handleCreateAnswerError)
+    },
+
+    handleCreateAnswerError () {
+      console.log('bbb')
+    },
+
+    createAnswerAndSendMessage (sessionDescription) {
+      pc.value.setLocalDescription(sessionDescription)
+      socket.send({ uid: uid.value, to: tid.value, type: 7, message: sessionDescription })
+      // ws.value.send(JSON.stringify({type:"4",uid:uid.value,to:rid.value,message:sessionDescription}))
+    },
+
+    createPeerConnection () {
+      pc.value = new RTCPeerConnection(null)
+      pc.value.onicecandidate = this.handleIceCandidate
+      pc.value.onaddstream = this.handleRemoteStreamAdded
+      for (const trac of mystrea.value.getTracks()) {
+        pc.value.addTrack(trac, mystrea.value)
+      }
+    },
+
+    handleRemoteStreamAdded (event) {
+      console.log(event)
+      v2.value.srcObject = event.stream
+    },
+
+    handleIceCandidate (event) {
+      if (event.candidate) {
+        socket.send({ uid: uid.value, to: tid.value, type: 8, message: event.candidate })
+      }
+    },
+
+    // 开启摄像头
+    sxt () {
+      return new Promise((resolve, reject) => {
+        navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: true
+        }).then(function (value) {
+          mystrea.value = value
+          v1.value.srcObject = value // 自己的流
+          // eslint-disable-next-line prefer-promise-reject-errors
+        }).then(() => resolve()).catch(() => reject())
       })
     },
+    accept () {
+      socket.send({ uid: uid.value, to: tid.value, type: 4 })
+    },
+    loginWebsocket () {
+      Promise.resolve().then(function () {
+        socket.init()
+      })
+        .then(function () {
+          uid.value = localStorage.getItem('userid')
+          if (uid.value === '1') {
+            tid.value = '3'
+          } else {
+            tid.value = '1'
+          }
+          socket.send({ uid: uid.value, type: 1 })
+        }).then(() => {
+          socket.send({ uid: uid.value, to: tid.value, type: 3 })
+        })
+    },
+    // async start () {
+    //   try {
+    //     // 获取本地音视频流
+    //     this.localStream = await navigator.mediaDevices.getUserMedia({
+    //       video: true
+    //       // audio: true
+    //     })
+    //
+    //     // 在本地视频元素中显示本地流
+    //     this.$refs.localVideo.srcObject = this.localStream
+    //     this.$refs.localVideo.play()
+    //
+    //     // 创建 WebRTC 客户端
+    //     this.peer = createClient()
+    //
+    //     // 加入房间
+    //     this.peer.joinRoom('room1')
+    //
+    //     // 监听新的远程流
+    //     this.peer.on('stream', (stream) => {
+    //       this.remoteStream = stream
+    //       this.$refs.remoteVideo.srcObject = stream
+    //       this.$refs.remoteVideo.play()
+    //     })
+    //
+    //     // 将本地流发布到房间中
+    //     this.peer.publish(this.localStream)
+    //   } catch (error) {
+    //     console.error(error)
+    //   }
+    // },
+    // stop () {
+    //   // 停止本地音视频流
+    //   if (this.localStream) {
+    //     this.localStream.getTracks().forEach((track) => track.stop())
+    //   }
+    //
+    //   // 停止远程音视频流
+    //   if (this.remoteStream) {
+    //     this.remoteStream.getTracks().forEach((track) => track.stop())
+    //   }
+    //
+    //   // 关闭 WebRTC 客户端
+    //   if (this.peer) {
+    //     this.peer.close()
+    //     this.peer = null
+    //   }
+    // },
+    // webrtc
     initWebRTC () {
       navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
@@ -180,48 +437,6 @@ export default {
         .catch(error => {
           console.log(error)
         })
-      // 初始化WebRTC连接
-      // 创建ICE服务器
-      const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
-
-      // 创建RTCPeerConnection对象
-      this.peerConnection = new RTCPeerConnection(configuration)
-
-      // 添加本地媒体流到RTCPeerConnection中
-      // this.localStream.getTracks().forEach((track) => {
-      //   this.peerConnection.addTrack(track, this.localStream)
-      // })
-
-      // 监听candidate事件，并发送candidate到对端
-      this.peerConnection.addEventListener('icecandidate', (event) => {
-        if (event.candidate) {
-          console.log('发送ICE candidate到对端：', event.candidate)
-          this.sendIceCandidate(event.candidate)
-        }
-      })
-
-      // 监听track事件，并将远端媒体流绑定到HTML的video标签上
-      this.peerConnection.addEventListener('track', (event) => {
-        console.log('收到远端媒体流：', event.streams[0])
-        this.remoteStream = event.streams[0]
-        this.$refs.remoteVideoElement.srcObject = this.remoteStream
-      })
-    },
-
-    // sendIceCandidate (candidate) {
-    //   if (ws.readyState === WebSocket.OPEN) {
-    //     // 将ICE candidate转换为JSON字符串形式，并发送到对端
-    //     ws.send(JSON.stringify({
-    //       type: 'icecandidate',
-    //       candidate: candidate.toJSON()
-    //     }))
-    //     console.log('发送ICE candidate到对端：', candidate)
-    //   } else {
-    //     console.warn('WebSocket连接未打开，无法发送消息')
-    //   }
-    // },
-    sendLocalStream () {
-      // 将本地视频流发送到后端Java服务器
     },
     // 进入全屏模式
     enterFullScreen () {
@@ -246,7 +461,11 @@ export default {
     },
     // 处理窗口切换事件
     handleScreenOff () {
-      this.isScreenOff = true
+      if (this.isScreenOff2) {
+        this.isScreenOff = true
+      }
+      console.log('看看是多少' + this.isScreenOff2)
+
       // 可以在这里添加其他逻辑，例如记录考试成绩等
       // 立即中止考试
       // window.location.href = 'about:blank'
@@ -285,6 +504,7 @@ export default {
     },
     submitForm () {
       this.isScreenOff = false
+      console.log(this.answer.answerItems)
       let _this = this
       window.clearInterval(_this.timer)
       _this.formLoading = true
@@ -349,6 +569,20 @@ export default {
   .video{
     position: fixed;
     top: 100px; /* 设置视频在页面中的相对位置 */
+    width: 340px;
+    height: 180px;
+  }
+
+  .video1{
+    position: fixed;
+    top: 100px; /* 设置视频在页面中的相对位置 */
+    width: 340px;
+    height: 180px;
+  }
+
+  .video2{
+    position: fixed;
+    top: 300px; /* 设置视频在页面中的相对位置 */
     width: 340px;
     height: 180px;
   }

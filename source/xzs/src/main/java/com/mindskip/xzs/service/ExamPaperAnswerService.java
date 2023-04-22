@@ -3,6 +3,8 @@ package com.mindskip.xzs.service;
 import com.mindskip.xzs.domain.ExamPaperAnswer;
 import com.mindskip.xzs.domain.ExamPaperAnswerInfo;
 import com.mindskip.xzs.domain.User;
+import com.mindskip.xzs.viewmodel.admin.exam.ExamAnalyseTable;
+import com.mindskip.xzs.viewmodel.admin.exam.ExamAnalyseVM;
 import com.mindskip.xzs.viewmodel.student.exam.ExamPaperSubmitVM;
 import com.mindskip.xzs.viewmodel.student.exampaper.ExamPaperAnswerPageVM;
 import com.github.pagehelper.PageInfo;
@@ -50,4 +52,6 @@ public interface ExamPaperAnswerService extends BaseService<ExamPaperAnswer> {
     List<Integer> selectMothCount();
 
     PageInfo<ExamPaperAnswer> adminPage(com.mindskip.xzs.viewmodel.admin.paper.ExamPaperAnswerPageRequestVM requestVM);
+
+    List<ExamAnalyseTable> selectAnalyse(Integer id);
 }

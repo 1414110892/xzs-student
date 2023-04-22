@@ -224,5 +224,11 @@
 				) a
 		GROUP BY create_time
 	</select>
+    <select id="selectAllQuestions" resultType="com.mindskip.xzs.domain.Question">
+      select * from t_question
+    </select>
+    <select id="selectQuestionById" resultType="com.mindskip.xzs.domain.Question">
+      select * from t_question where id = #{id}
+    </select>
 
 </mapper>

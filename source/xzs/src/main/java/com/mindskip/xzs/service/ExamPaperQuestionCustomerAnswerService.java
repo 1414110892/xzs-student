@@ -7,6 +7,7 @@ import com.mindskip.xzs.viewmodel.student.question.answer.QuestionPageStudentReq
 import com.github.pagehelper.PageInfo;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ExamPaperQuestionCustomerAnswerService extends BaseService<ExamPaperQuestionCustomerAnswer> {
 
@@ -32,7 +33,17 @@ public interface ExamPaperQuestionCustomerAnswerService extends BaseService<Exam
 
     Integer selectAllCount();
 
+    Integer selectQuestionsTrueById(Integer id);
+
+    Integer selectQuestionCntById(Integer id);
+
     List<Integer> selectMothCount();
 
     int updateScore(List<ExamPaperAnswerUpdate> examPaperAnswerUpdates);
+
+    List<Map<String, String>> selectQuestionById(Integer id);
+
+    Integer selectAnswerCntByPaperId(Integer id);
+
+    List<Map<String, Double>> selectListByExamPaperId(Integer id);
 }

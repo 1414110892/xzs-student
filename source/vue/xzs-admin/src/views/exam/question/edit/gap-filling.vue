@@ -131,6 +131,7 @@ export default {
     inputClick (object, parameterName) {
       this.richEditor.object = object
       this.richEditor.parameterName = parameterName
+      // this.form.correct = parameterName
       this.richEditor.dialogVisible = true
     },
     editorConfirm () {
@@ -177,6 +178,8 @@ export default {
     },
     submitForm () {
       let _this = this
+      // this.form.correct = this.form.items.content
+      // console.log(this.form.items.content)
       this.$refs.form.validate((valid) => {
         if (valid) {
           this.formLoading = true

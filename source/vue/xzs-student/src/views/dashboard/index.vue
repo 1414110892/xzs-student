@@ -27,18 +27,18 @@
                   {{paperItem.examPaperName}}
                 </td>
                 <td width="70px">
-                  <el-tag :type="statusTagFormatter(paperItem.status)" v-if="paperItem.status !== null" size="mini">
-                    {{ statusTextFormatter(paperItem.status) }}
+                  <el-tag :type="statusTagFormatter(2)" v-if="paperItem.status !== null" size="mini">
+                    {{ statusTextFormatter(2) }}
                   </el-tag>
                 </td>
                 <td width="80px">
-                  <router-link target="_blank"  v-if="paperItem.status === null">
-                    <el-button  type="text" size="small" @click="enterFullScreen">开始答题</el-button>
+                  <router-link target="_blank" :to="{path:'/do',query:{id:paperItem.examPaperId}}" v-if="paperItem.status === null">
+                    <el-button  type="text" size="small">开始答题</el-button>
                   </router-link>
-                  <router-link target="_blank" :to="{path:'/edit',query:{id:paperItem.examPaperAnswerId}}" v-else-if="paperItem.status === 1">
-                    <el-button  type="text" size="small">批改试卷</el-button>
-                  </router-link>
-                  <router-link target="_blank" :to="{path:'/read',query:{id:paperItem.examPaperAnswerId}}" v-else-if="paperItem.status === 2">
+<!--                  <router-link target="_blank" :to="{path:'/edit',query:{id:paperItem.examPaperAnswerId}}" v-else-if="paperItem.status === 1">-->
+<!--                    <el-button  type="text" size="small">批改试卷</el-button>-->
+<!--                  </router-link>-->
+                  <router-link target="_blank" :to="{path:'/read',query:{id:paperItem.examPaperAnswerId}}" v-else-if="paperItem.status">
                     <el-button  type="text" size="small">查看试卷</el-button>
                   </router-link>
                 </td>

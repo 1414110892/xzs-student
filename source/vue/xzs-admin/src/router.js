@@ -96,6 +96,13 @@ const constantRoutes = [
         hidden: true
       },
       {
+        path: 'paper/analyse',
+        component: () => import('@/views/exam/paper/analyse'),
+        name: 'ExamAnalyse',
+        meta: { title: '试卷分析', noCache: true, activeMenu: '/exam/paper/list' },
+        hidden: true
+      },
+      {
         path: 'question/list',
         component: () => import('@/views/exam/question/list'),
         name: 'ExamQuestionPageList',

@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -66,12 +67,29 @@ public class QuestionServiceImpl extends BaseServiceImpl<Question> implements Qu
         textContentService.insertByFilter(infoTextContent);
 
         Question question = new Question();
+        if (model.getQuestionType() == 4){
+            String ts = "";
+            if(model.getQuestionType() == 4){
+                for (QuestionEditItemVM item : model.getItems()) {
+//                    ts = ts+item.getContent()+",";
+                    ts = ts+item.getContent()+"@@";
+                }
+            }
+            ts = ts.substring(0, ts.length() - 1);
+            ts = ts.substring(0, ts.length() - 1);
+            question.setCorrect(ts);
+        }
         question.setSubjectId(model.getSubjectId());
         question.setGradeLevel(gradeLevel);
         question.setCreateTime(now);
         question.setQuestionType(model.getQuestionType());
         question.setStatus(QuestionStatusEnum.OK.getCode());
-        question.setCorrectFromVM(model.getCorrect(), model.getCorrectArray());
+        if(model.getQuestionType() == 4){
+            question.setCorrectFromVM(question.getCorrect(), model.getCorrectArray());
+        }else{
+            question.setCorrectFromVM(model.getCorrect(), model.getCorrectArray());
+
+        }
         question.setScore(ExamUtil.scoreFromVM(model.getScore()));
         question.setDifficult(model.getDifficult());
         question.setInfoTextContentId(infoTextContent.getId());
@@ -86,11 +104,40 @@ public class QuestionServiceImpl extends BaseServiceImpl<Question> implements Qu
     public Question updateFullQuestion(QuestionEditRequestVM model) {
         Integer gradeLevel = subjectService.levelBySubjectId(model.getSubjectId());
         Question question = questionMapper.selectByPrimaryKey(model.getId());
+        //填空体答案没有录入
+//        if (model.getQuestionType() == 4){
+//            String ts = "";
+//            if(model.getQuestionType() == 4){
+//                for (String s : model.getCorrectArray()) {
+//                    ts = ts+s+",";
+//                    ts = ts+s+",";
+//                }
+//            }
+//            ts = ts.substring(0, ts.length() - 1);
+//            question.setCorrect(ts);
+//        }
+        if (model.getQuestionType() == 4){
+            String ts = "";
+            if(model.getQuestionType() == 4){
+                for (QuestionEditItemVM item : model.getItems()) {
+//                    ts = ts+item.getContent()+",";
+                    ts = ts+item.getContent()+"@@";
+                }
+            }
+            ts = ts.substring(0, ts.length() - 1);
+            ts = ts.substring(0, ts.length() - 1);
+            question.setCorrect(ts);
+        }
+
         question.setSubjectId(model.getSubjectId());
         question.setGradeLevel(gradeLevel);
         question.setScore(ExamUtil.scoreFromVM(model.getScore()));
         question.setDifficult(model.getDifficult());
-        question.setCorrectFromVM(model.getCorrect(), model.getCorrectArray());
+        if(model.getQuestionType() == 4){
+            question.setCorrectFromVM(question.getCorrect(), model.getCorrectArray());
+        }else{
+            question.setCorrectFromVM(model.getCorrect(), model.getCorrectArray());
+        }
         questionMapper.updateByPrimaryKeySelective(question);
 
         //题干、解析、选项等 更新
@@ -186,6 +233,16 @@ public class QuestionServiceImpl extends BaseServiceImpl<Question> implements Qu
             KeyValue keyValue = mouthCount.stream().filter(kv -> kv.getName().equals(md)).findAny().orElse(null);
             return null == keyValue ? 0 : keyValue.getValue();
         }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Integer> selectAllQuestionsId() {
+        List<Question> questions = questionMapper.selectAllQuestions();
+        List<Integer> q = new ArrayList<>();
+        for (Question question : questions) {
+            q.add(question.getId());
+        }
+        return q;
     }
 
 

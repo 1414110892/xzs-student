@@ -10,10 +10,14 @@ import '@/styles/index.scss' // global css
 import './icons' // icon
 import NProgress from 'nprogress' // progress bar
 import 'nprogress/nprogress.css' // progress bar style
+import { createPinia } from 'pinia'
+
+const pinia = createPinia()
 
 Vue.use(Element, {
   size: 'medium' // set element-ui default size
 })
+Vue.use(pinia)
 
 Vue.config.productionTip = false
 

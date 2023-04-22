@@ -19,6 +19,8 @@ import com.mindskip.xzs.service.TextContentService;
 import com.mindskip.xzs.utility.DateTimeUtil;
 import com.mindskip.xzs.utility.ExamUtil;
 import com.mindskip.xzs.utility.JsonUtil;
+import com.mindskip.xzs.viewmodel.admin.exam.ExamAnalyseTable;
+import com.mindskip.xzs.viewmodel.admin.exam.ExamAnalyseVM;
 import com.mindskip.xzs.viewmodel.student.exam.ExamPaperSubmitItemVM;
 import com.mindskip.xzs.viewmodel.student.exam.ExamPaperSubmitVM;
 import com.mindskip.xzs.viewmodel.student.exampaper.ExamPaperAnswerPageVM;
@@ -29,10 +31,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 public class ExamPaperAnswerServiceImpl extends BaseServiceImpl<ExamPaperAnswer> implements ExamPaperAnswerService {
@@ -43,9 +45,10 @@ public class ExamPaperAnswerServiceImpl extends BaseServiceImpl<ExamPaperAnswer>
     private final QuestionMapper questionMapper;
     private final ExamPaperQuestionCustomerAnswerService examPaperQuestionCustomerAnswerService;
     private final TaskExamCustomerAnswerMapper taskExamCustomerAnswerMapper;
+    private final UserMapper userMapper;
 
     @Autowired
-    public ExamPaperAnswerServiceImpl(ExamPaperAnswerMapper examPaperAnswerMapper, ExamPaperMapper examPaperMapper, TextContentService textContentService, QuestionMapper questionMapper, ExamPaperQuestionCustomerAnswerService examPaperQuestionCustomerAnswerService, TaskExamCustomerAnswerMapper taskExamCustomerAnswerMapper) {
+    public ExamPaperAnswerServiceImpl(UserMapper userMapper,ExamPaperAnswerMapper examPaperAnswerMapper, ExamPaperMapper examPaperMapper, TextContentService textContentService, QuestionMapper questionMapper, ExamPaperQuestionCustomerAnswerService examPaperQuestionCustomerAnswerService, TaskExamCustomerAnswerMapper taskExamCustomerAnswerMapper) {
         super(examPaperAnswerMapper);
         this.examPaperAnswerMapper = examPaperAnswerMapper;
         this.examPaperMapper = examPaperMapper;
@@ -53,6 +56,7 @@ public class ExamPaperAnswerServiceImpl extends BaseServiceImpl<ExamPaperAnswer>
         this.questionMapper = questionMapper;
         this.examPaperQuestionCustomerAnswerService = examPaperQuestionCustomerAnswerService;
         this.taskExamCustomerAnswerMapper = taskExamCustomerAnswerMapper;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -66,7 +70,9 @@ public class ExamPaperAnswerServiceImpl extends BaseServiceImpl<ExamPaperAnswer>
     public ExamPaperAnswerInfo calculateExamPaperAnswer(ExamPaperSubmitVM examPaperSubmitVM, User user) {
         ExamPaperAnswerInfo examPaperAnswerInfo = new ExamPaperAnswerInfo();
         Date now = new Date();
+        //查询试卷表
         ExamPaper examPaper = examPaperMapper.selectByPrimaryKey(examPaperSubmitVM.getId());
+        //试卷类型
         ExamPaperTypeEnum paperTypeEnum = ExamPaperTypeEnum.fromCode(examPaper.getPaperType());
         //任务试卷只能做一次
         if (paperTypeEnum == ExamPaperTypeEnum.Task) {
@@ -74,10 +80,14 @@ public class ExamPaperAnswerServiceImpl extends BaseServiceImpl<ExamPaperAnswer>
             if (null != examPaperAnswer)
                 return null;
         }
+        //试卷框架内容为json  t_exam_paper中frame_text_content_id
+        // 再根据frame_text_content_id查询t_text_content中的content
         String frameTextContent = textContentService.selectById(examPaper.getFrameTextContentId()).getContent();
         List<ExamPaperTitleItemObject> examPaperTitleItemObjects = JsonUtil.toJsonListObject(frameTextContent, ExamPaperTitleItemObject.class);
         List<Integer> questionIds = examPaperTitleItemObjects.stream().flatMap(t -> t.getQuestionItems().stream().map(q -> q.getId())).collect(Collectors.toList());
+        //查询出每一道题目，开始只查询了选择题和判断题，主观题和填空题没有查出来
         List<Question> questions = questionMapper.selectByIds(questionIds);
+        System.out.println(questions.toString());
         //将题目结构的转化为题目答案
         List<ExamPaperQuestionCustomerAnswer> examPaperQuestionCustomerAnswers = examPaperTitleItemObjects.stream()
                 .flatMap(t -> t.getQuestionItems().stream()
@@ -232,13 +242,56 @@ public class ExamPaperAnswerServiceImpl extends BaseServiceImpl<ExamPaperAnswer>
                 examPaperQuestionCustomerAnswer.setCustomerScore(examPaperQuestionCustomerAnswer.getDoRight() ? question.getScore() : 0);
                 break;
             case GapFilling:
+//                String correctAnswer = JsonUtil.toJsonStr(customerQuestionAnswer.getContentArray());
+//                examPaperQuestionCustomerAnswer.setAnswer(correctAnswer);
+//                examPaperQuestionCustomerAnswer.setCustomerScore(0);
                 String correctAnswer = JsonUtil.toJsonStr(customerQuestionAnswer.getContentArray());
                 examPaperQuestionCustomerAnswer.setAnswer(correctAnswer);
-                examPaperQuestionCustomerAnswer.setCustomerScore(0);
+//                String customerQuestionAnswer2 = "[\""+customerQuestionAnswer+"\"]";
+                String strQuestionCorrect = question.getCorrect();
+                String[] arr1 = {};
+                String[] arr2 = {};
+                int trueNum = 0;
+                //如果是文本编辑器公式写出来的答案
+//                if(strQuestionCorrect.contains("<img")){
+//
+//                }else{
+                    //没用用公式写的答案
+//                    arr1 = strQuestionCorrect.split(",");
+                    arr1 = strQuestionCorrect.split("@@");
+                    arr2 = (customerQuestionAnswer.getContentArray()).toArray(new String[0]);
+                    trueNum = 0;
+                    for (int i = 0; i < arr2.length; i++) {
+                        if(arr2[i] == null){
+                            arr2[i] = "";
+                        }
+                    }
+                    // 遍历两个数组并比较对应位置的元素
+                    for (int i = 0; i < arr2.length; i++) {
+                        if (arr2[i].equals(arr1[i])) {
+                            trueNum++;
+                        }
+                    }
+//                }
+
+                Question q = questionMapper.selectQuestionById(question.getId());
+                //数据库找到总分这个填空题
+                int score = q.getScore();
+                //计算出有几个填空
+                int sizeAnswer = arr1.length;
+                //计算单个选项的分数
+                int singleScore = score / sizeAnswer;
+                int scoreSum = singleScore * trueNum;
+                examPaperQuestionCustomerAnswer.setDoRight(trueNum == sizeAnswer);
+                examPaperQuestionCustomerAnswer.setCustomerScore(scoreSum);
                 break;
             default:
+//                examPaperQuestionCustomerAnswer.setAnswer(customerQuestionAnswer.getContent());
+//                examPaperQuestionCustomerAnswer.setCustomerScore(0);"["测试1","测试2","测试3"]"
                 examPaperQuestionCustomerAnswer.setAnswer(customerQuestionAnswer.getContent());
-                examPaperQuestionCustomerAnswer.setCustomerScore(0);
+                String customerQuestionAnswer2 = customerQuestionAnswer.getContent();
+                examPaperQuestionCustomerAnswer.setDoRight(question.getCorrect().equals(customerQuestionAnswer2));
+                examPaperQuestionCustomerAnswer.setCustomerScore(examPaperQuestionCustomerAnswer.getDoRight() ? question.getScore() : 0);
                 break;
         }
     }
@@ -274,5 +327,35 @@ public class ExamPaperAnswerServiceImpl extends BaseServiceImpl<ExamPaperAnswer>
     public PageInfo<ExamPaperAnswer> adminPage(com.mindskip.xzs.viewmodel.admin.paper.ExamPaperAnswerPageRequestVM requestVM) {
         return PageHelper.startPage(requestVM.getPageIndex(), requestVM.getPageSize(), "id desc").doSelectPageInfo(() ->
                 examPaperAnswerMapper.adminPage(requestVM));
+    }
+
+    @Override
+    public List<ExamAnalyseTable> selectAnalyse(Integer id) {
+        List<ExamAnalyseTable> examAnalyseTableList = new ArrayList<>();
+        List<ExamPaperAnswer> examPaperAnswerList = examPaperAnswerMapper.selectByExamPaperId(id);
+        //去掉list集合中重复的create_user
+
+        List<ExamPaperAnswer> resultList = examPaperAnswerList.stream()
+                .collect(Collectors.groupingBy(ExamPaperAnswer::getCreateUser, Collectors.maxBy(Comparator.comparing(ExamPaperAnswer::getUserScore))))
+                .values().stream()
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+        resultList.sort(Comparator.comparing(ExamPaperAnswer::getUserScore).reversed());
+
+        ExamPaper examPaper = examPaperMapper.selectByPrimaryKey(id);
+        int i = 1;
+        for (ExamPaperAnswer examPaperAnswer : resultList) {
+            ExamAnalyseTable examAnalyseTable = new ExamAnalyseTable();
+            User userById = userMapper.getUserById(examPaperAnswer.getCreateUser());
+            examAnalyseTable.setRealName(userById.getRealName());
+            examAnalyseTable.setMaxScore(examPaperAnswer.getUserScore()/10);
+            examAnalyseTable.setExamName(examPaper.getName());
+            int score = examPaperAnswer.getPaperScore()/10;
+            examAnalyseTable.setTotalScore(score+"/"+score*0.6);
+            examAnalyseTable.setRank(i++);
+            examAnalyseTableList.add(examAnalyseTable);
+        }
+        return examAnalyseTableList;
     }
 }

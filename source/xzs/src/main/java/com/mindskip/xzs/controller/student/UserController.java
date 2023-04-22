@@ -63,6 +63,7 @@ public class UserController extends BaseApiController {
         }
         User user = modelMapper.map(model, User.class);
         String encodePwd = authenticationService.pwdEncode(model.getPassword());
+        user.setImagePath("https://www.mindskip.net:9008/image/ba607a75-83ba-4530-8e23-660b72dc4953/头像.jpg");
         user.setUserUuid(UUID.randomUUID().toString());
         user.setPassword(encodePwd);
         user.setRole(RoleEnum.STUDENT.getCode());

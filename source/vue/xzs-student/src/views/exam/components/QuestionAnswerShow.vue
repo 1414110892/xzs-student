@@ -35,11 +35,11 @@
       </div>
       <div v-else-if="qType==4" >
         <div class="q-title" v-html="question.title"/>
-        <div v-if="answer.contentArray!==null">
-          <el-form-item :label="item.prefix" :key="item.prefix"  v-for="item in question.items"  label-width="50px" style="margin-top: 10px;margin-bottom: 10px;">
-            <el-input v-model="answer.contentArray[item.prefix-1]"  />
-          </el-form-item>
-        </div>
+<!--        <div v-if="answer.contentArray!==null">-->
+<!--          <el-form-item :label="item.prefix" :key="item.prefix"  v-for="item in question.items"  label-width="50px" style="margin-top: 10px;margin-bottom: 10px;">-->
+<!--            <el-input v-model="answer.contentArray[item.prefix-1]"  />-->
+<!--          </el-form-item>-->
+<!--        </div>-->
       </div>
       <div v-else-if="qType==5">
         <div class="q-title" v-html="question.title"/>
@@ -70,7 +70,9 @@
         <span class="question-show-item">正确答案：</span>
         <span v-if="qType==1||qType==2 ||qType==5" v-html="question.correct" class="q-item-span-content"/>
         <span v-if="qType==3" v-html="trueFalseFormatter(question)" class="q-item-span-content"/>
-        <span v-if="qType==4">{{question.correctArray}}</span>
+<!--        <span v-if="qType==4">{{question.correctArray}}</span>-->
+        <span v-if="qType==4&&question.correctArray.join('').includes('<img')" v-html="question.correctArray.join('')"></span>
+        <span v-if="qType==4&&!question.correctArray.join('').includes('<img')">{{question.correctArray}}</span>
       </div>
     </div>
     <div v-else>

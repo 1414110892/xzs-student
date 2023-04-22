@@ -13,6 +13,24 @@ public class IndexVM {
     private List<Integer> mothDayUserActionValue;
     private List<Integer> mothDayDoExamQuestionValue;
     private List<String> mothDayText;
+    private List<Integer> examQuestionId;
+    private List<Double> examQuestionTrue;
+
+    public List<Integer> getExamQuestionId() {
+        return examQuestionId;
+    }
+
+    public void setExamQuestionId(List<Integer> examQuestionId) {
+        this.examQuestionId = examQuestionId;
+    }
+
+    public List<Double> getExamQuestionTrue() {
+        return examQuestionTrue;
+    }
+
+    public void setExamQuestionTrue(List<Double> examQuestionTrue) {
+        this.examQuestionTrue = examQuestionTrue;
+    }
 
     public Integer getExamPaperCount() {
         return examPaperCount;

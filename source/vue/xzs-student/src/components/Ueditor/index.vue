@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="edui-editor-body" contenteditable="true" tabindex="0">
     <script :id="randomId" type="text/plain" style="height: 300px;"></script>
   </div>
 </template>
@@ -45,7 +45,11 @@ export default {
     initEditor () {
       this.$nextTick(() => {
         // eslint-disable-next-line no-undef
-        this.instance = UE.getEditor(this.randomId)
+        this.instance = UE.getEditor(this.randomId, {
+          autoClearinitialContent: true // 添加autoClearinitialContent配置选项
+          // autoBlur: false
+        })
+        // eslint-disable-next-line no-undef
         this.instance.addListener('ready', () => {
           this.ready = true
           this.$emit('ready', this.instance)
@@ -54,6 +58,7 @@ export default {
     },
     getUEContent () {
       return this.instance.getContent()
+      // return this.instance.getContentTxt()
     },
     setText (con) {
       // eslint-disable-next-line no-undef

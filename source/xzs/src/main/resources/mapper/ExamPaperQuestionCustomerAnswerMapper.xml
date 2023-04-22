@@ -270,6 +270,33 @@
 				) a
 		GROUP BY create_time
   </select>
+    <select id="selectQuestionsTrueById" resultType="java.lang.Integer">
+      select count(*) from t_exam_paper_question_customer_answer where question_id = #{id} and do_right=1
+    </select>
+  <select id="selectQuestionCntById" resultType="java.lang.Integer">
+    select count(*) from t_exam_paper_question_customer_answer where question_id = #{id}
+  </select>
+    <select id="selectQuestionById" resultType="java.lang.Integer">
+      select question_type from t_exam_paper_question_customer_answer where exam_paper_id = #{id}
+    </select>
+  <select id="selectTrueScore" resultType="java.lang.Integer">
+    select sum(customer_score),question_type from t_exam_paper_question_customer_answer group by question_type having question_type = #{integer}
+  </select>
+  <select id="selectOrignScore" resultType="java.lang.Integer">
+    select sum(question_score),question_type from t_exam_paper_question_customer_answer group by question_type having question_type = #{integer}
+  </select>
+  <select id="selectAnswerCntByPaperId" resultType="java.lang.Integer">
+    select count(DISTINCT create_user) from t_exam_paper_question_customer_answer where exam_paper_id = #{id}
+  </select>
+  <select id="selectListByExamPaperId" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List" /> from t_exam_paper_question_customer_answer where exam_paper_id = #{id} order by item_order
+  </select>
+  <select id="selectAllDoRightByItemOrder" resultType="java.lang.Integer">
+    select count(*) from t_exam_paper_question_customer_answer where item_order = #{itemOrder} and exam_paper_id=#{id} and do_right = 1
+  </select>
+  <select id="selectAllDoWrongByItemOrder" resultType="java.lang.Integer">
+    select count(*) from t_exam_paper_question_customer_answer where item_order = #{itemOrder} and exam_paper_id=#{id} and do_right = 0
+  </select>
 
   <update id="updateScore" parameterType="java.util.List">
     <foreach collection="list" item="item" >

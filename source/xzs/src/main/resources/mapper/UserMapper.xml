@@ -250,7 +250,7 @@
   <select id="getAllUser" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List"/>
-    from t_user where deleted=0
+    from t_user where deleted=0 and role=1
   </select>
 
   <select id="getUserById" resultMap="BaseResultMap">

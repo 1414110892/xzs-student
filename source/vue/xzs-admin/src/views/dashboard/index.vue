@@ -4,7 +4,7 @@
       <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
         <div class="card-panel">
           <div class="card-panel-icon-wrapper icon-people">
-            <svg-icon icon-class="exam" class-name="card-panel-icon"/>
+            <svg-icon icon-class="myPaper" class-name="card-panel-icon"/>
           </div>
           <div class="card-panel-description">
             <div class="card-panel-text">
@@ -17,7 +17,7 @@
       <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
         <div class="card-panel" >
           <div class="card-panel-icon-wrapper icon-message">
-            <svg-icon icon-class="question" class-name="card-panel-icon"/>
+            <svg-icon icon-class="myQuestions" class-name="card-panel-icon"/>
           </div>
           <div class="card-panel-description">
             <div class="card-panel-text">
@@ -30,7 +30,7 @@
       <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
         <div class="card-panel">
           <div class="card-panel-icon-wrapper icon-shopping">
-            <svg-icon icon-class="doexampaper" class-name="card-panel-icon"/>
+            <svg-icon icon-class="myAnswer" class-name="card-panel-icon"/>
           </div>
           <div class="card-panel-description">
             <div class="card-panel-text">
@@ -43,7 +43,7 @@
       <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
         <div class="card-panel">
           <div class="card-panel-icon-wrapper icon-money">
-            <svg-icon icon-class="doquestion" class-name="card-panel-icon"/>
+            <svg-icon icon-class="myAnswerCnt" class-name="card-panel-icon"/>
           </div>
           <div class="card-panel-description">
             <div class="card-panel-text">
@@ -53,6 +53,9 @@
           </div>
         </div>
       </el-col>
+    </el-row>
+    <el-row class="echarts-line">
+      <div id="container" style="width: 100%;height:400px;"></div>
     </el-row>
     <el-row class="echarts-line">
       <div id="echarts-moth-user" style="width: 100%;height:400px;" v-loading="loading"/>
@@ -67,6 +70,7 @@
 import resize from './components/mixins/resize'
 import CountTo from 'vue-count-to'
 import dashboardApi from '@/api/dashboard'
+import * as echarts from 'echarts'
 export default {
   mixins: [resize],
   components: {
@@ -80,6 +84,7 @@ export default {
       doQuestionCount: 0,
       echartsUserAction: null,
       echartsQuestion: null,
+      echartsExam: null,
       loading: false
     }
   },
@@ -88,6 +93,11 @@ export default {
     this.echartsUserAction = echarts.init(document.getElementById('echarts-moth-user'), 'macarons')
     // eslint-disable-next-line no-undef
     this.echartsQuestion = echarts.init(document.getElementById('echarts-moth-question'), 'macarons')
+    // eslint-disable-next-line no-undef
+    this.echartsExam = echarts.init(document.getElementById('container'), null, {
+      renderer: 'canvas',
+      useDirtyRect: false
+    })
     let _this = this
     this.loading = true
     dashboardApi.index().then(re => {
@@ -99,6 +109,11 @@ export default {
       _this.echartsUserAction.setOption(this.option('用户活跃度', '{b}日{c}度', response.mothDayText, response.mothDayUserActionValue))
       _this.echartsQuestion.setOption(this.option('题目月数量', '{b}日{c}题', response.mothDayText, response.mothDayDoExamQuestionValue))
       this.loading = false
+    })
+    dashboardApi.index2().then(re => {
+      // eslint-disable-next-line no-unused-vars
+      let response = re.response
+      _this.echartsExam.setOption(this.option2('各个题目正确率', response.examQuestionId, response.examQuestionTrue))
     })
   },
   methods: {
@@ -130,6 +145,28 @@ export default {
           data: vaule,
           type: 'line'
         }]
+      }
+    },
+    option2 (title, label, value) {
+      return {
+        title: {
+          text: title,
+          x: 'center'
+        },
+        xAxis: {
+          type: 'category',
+          data: label,
+          name: '题目编号'
+        },
+        yAxis: {
+          type: 'value'
+        },
+        series: [
+          {
+            data: value,
+            type: 'line'
+          }
+        ]
       }
     }
   }

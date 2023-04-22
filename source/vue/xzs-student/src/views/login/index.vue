@@ -1,13 +1,14 @@
 <template>
   <div class="lowin  lowin-blue">
     <div class="lowin-brand">
-      <img src="@/assets/logo2.png" alt="logo" style="margin-top: 12px">
+<!--      <img src="@/assets/logo2.png" alt="logo" style="margin-top: 12px">-->
+      <img src="@/assets/tx.jpg" alt="logo" style="margin-top: 12px">
     </div>
     <div class="lowin-wrapper">
       <div class="lowin-box lowin-login">
         <div class="lowin-box-inner">
           <el-form ref="loginForm" :model="loginForm" :rules="loginRules">
-            <p>学之思开源考试系统</p>
+            <p>学生在线考试系统</p>
             <div class="lowin-group">
               <label>用户名 </label>
               <el-input ref="userName" v-model="loginForm.userName" class="lowin-input" placeholder="用户名" name="userName" type="text" tabindex="1" auto-complete="on"/>
@@ -30,9 +31,7 @@
         </div>
       </div>
     </div>
-    <div class="account-foot-copyright">
-      <span>Copyright ©2019-2023 武汉思维跳跃科技有限公司 版权所有</span>
-    </div>
+
   </div>
 </template>
 
@@ -58,6 +57,12 @@ export default {
       }
     }
     return {
+      photo: '',
+      prePhotoBase64: 'pre_photo_base64', // 这里需要替换为进入考试前拍摄的照片的base64编码
+      apiUrl: 'https://api-cn.faceplusplus.com/facepp/v3/compare',
+      apiKey: 'qsyfHNCynLOG5So6qEaWAabOe_aeH3Sm',
+      apiSecret: 'ZkhNatzjDFdtYyaDEwcOpVLkzcQ8Mw6O',
+      threshold: 70.0,
       loginForm: {
         userName: '',
         password: '',
@@ -87,6 +92,17 @@ export default {
     // window.removeEventListener('storage', this.afterQRScan)
   },
   methods: {
+    // 考试提交函数
+    // async submit () {
+    //   const result = await this.compareFaces()
+    //   if (result) {
+    //     // 人脸匹配成功，考试继续进行
+    //     alert('考试通过。')
+    //   } else {
+    //     // 人脸匹配失败，考试中止
+    //     alert('考试未通过。')
+    //   }
+    // },
     checkCapslock ({ shiftKey, key } = {}) {
       if (key && key.length === 1) {
         // eslint-disable-next-line no-mixed-operators

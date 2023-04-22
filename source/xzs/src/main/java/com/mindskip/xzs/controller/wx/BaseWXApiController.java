@@ -1,6 +1,6 @@
 package com.mindskip.xzs.controller.wx;
 
-import com.mindskip.xzs.context.WxContext;
+import com.mindskip.xzs.context.WebContext2;
 import com.mindskip.xzs.domain.User;
 import com.mindskip.xzs.domain.UserToken;
 import com.mindskip.xzs.utility.ModelMapperSingle;
@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class BaseWXApiController {
     protected final static ModelMapper modelMapper = ModelMapperSingle.Instance();
     @Autowired
-    private WxContext wxContext;
+    private WebContext2 wxContext;
 
     protected User getCurrentUser() {
         return wxContext.getCurrentUser();

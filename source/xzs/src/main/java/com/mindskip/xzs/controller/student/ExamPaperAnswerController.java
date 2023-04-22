@@ -8,12 +8,14 @@ import com.mindskip.xzs.event.CalculateExamPaperAnswerCompleteEvent;
 import com.mindskip.xzs.event.UserEvent;
 import com.mindskip.xzs.service.ExamPaperAnswerService;
 import com.mindskip.xzs.service.ExamPaperService;
+import com.mindskip.xzs.service.QuestionService;
 import com.mindskip.xzs.service.SubjectService;
 import com.mindskip.xzs.utility.DateTimeUtil;
 import com.mindskip.xzs.utility.ExamUtil;
 import com.mindskip.xzs.utility.PageInfoHelper;
 import com.mindskip.xzs.viewmodel.admin.exam.ExamPaperEditRequestVM;
 import com.mindskip.xzs.viewmodel.student.exam.ExamPaperReadVM;
+import com.mindskip.xzs.viewmodel.student.exam.ExamPaperSubmitItemVM;
 import com.mindskip.xzs.viewmodel.student.exam.ExamPaperSubmitVM;
 import com.mindskip.xzs.viewmodel.student.exampaper.ExamPaperAnswerPageResponseVM;
 import com.mindskip.xzs.viewmodel.student.exampaper.ExamPaperAnswerPageVM;
@@ -33,13 +35,15 @@ public class ExamPaperAnswerController extends BaseApiController {
     private final ExamPaperService examPaperService;
     private final SubjectService subjectService;
     private final ApplicationEventPublisher eventPublisher;
+    private final QuestionService questionService;
 
     @Autowired
-    public ExamPaperAnswerController(ExamPaperAnswerService examPaperAnswerService, ExamPaperService examPaperService, SubjectService subjectService, ApplicationEventPublisher eventPublisher) {
+    public ExamPaperAnswerController(ExamPaperAnswerService examPaperAnswerService, ExamPaperService examPaperService, SubjectService subjectService, ApplicationEventPublisher eventPublisher,QuestionService questionService) {
         this.examPaperAnswerService = examPaperAnswerService;
         this.examPaperService = examPaperService;
         this.subjectService = subjectService;
         this.eventPublisher = eventPublisher;
+        this.questionService = questionService;
     }
 
 
@@ -65,6 +69,16 @@ public class ExamPaperAnswerController extends BaseApiController {
     @RequestMapping(value = "/answerSubmit", method = RequestMethod.POST)
     public RestResponse answerSubmit(@RequestBody @Valid ExamPaperSubmitVM examPaperSubmitVM) {
         User user = getCurrentUser();
+        //填空题前端传过来没有内容
+        for (ExamPaperSubmitItemVM answerItem : examPaperSubmitVM.getAnswerItems()) {
+            Question question = questionService.selectById(answerItem.getQuestionId());
+            if(question.getQuestionType() == 4){
+                for (String s : answerItem.getContentArray()) {
+                    answerItem.setContent(s);
+                }
+            }
+
+        }
         ExamPaperAnswerInfo examPaperAnswerInfo = examPaperAnswerService.calculateExamPaperAnswer(examPaperSubmitVM, user);
         if (null == examPaperAnswerInfo) {
             return RestResponse.fail(2, "试卷不能重复做");

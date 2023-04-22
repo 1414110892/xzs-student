@@ -262,5 +262,9 @@
       </if>
     </where>
   </select>
+  <select id="selectByExamPaperId" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/> from t_exam_paper_answer where exam_paper_id = #{id}
+  </select>
+
 
 </mapper>

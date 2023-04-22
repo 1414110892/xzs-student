@@ -2,7 +2,7 @@ package com.mindskip.xzs.configuration.spring.wx;
 
 import com.mindskip.xzs.base.SystemCode;
 import com.mindskip.xzs.configuration.spring.security.RestUtil;
-import com.mindskip.xzs.context.WxContext;
+import com.mindskip.xzs.context.WebContext2;
 import com.mindskip.xzs.domain.User;
 import com.mindskip.xzs.domain.UserToken;
 import com.mindskip.xzs.service.UserService;
@@ -21,10 +21,10 @@ public class TokenHandlerInterceptor implements HandlerInterceptor {
 
     private final UserTokenService userTokenService;
     private final UserService userService;
-    private final WxContext wxContext;
+    private final WebContext2 wxContext;
 
     @Autowired
-    public TokenHandlerInterceptor(UserTokenService userTokenService, UserService userService, WxContext wxContext) {
+    public TokenHandlerInterceptor(UserTokenService userTokenService, UserService userService, WebContext2 wxContext) {
         this.userTokenService = userTokenService;
         this.userService = userService;
         this.wxContext = wxContext;

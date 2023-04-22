@@ -26,9 +26,10 @@
       <el-table-column prop="subjectId" label="学科" :formatter="subjectFormatter" width="120px" />
       <el-table-column prop="name" label="名称"  />
       <el-table-column prop="createTime" label="创建时间" width="160px"/>
-      <el-table-column  label="操作" align="center"  width="160px">
+      <el-table-column  label="操作" align="center"  width="240px">
         <template slot-scope="{row}">
           <el-button size="mini" @click="$router.push({path:'/exam/paper/edit',query:{id:row.id}})" >编辑</el-button>
+          <el-button size="mini" @click="$router.push({path:'/exam/paper/analyse',query:{id:row.id}})" >试卷分析</el-button>
           <el-button size="mini" type="danger"  @click="deletePaper(row)" class="link-left">删除</el-button>
         </template>
       </el-table-column>
